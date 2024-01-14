@@ -1,0 +1,16 @@
+[package]
+name = "axum-shuttle-template"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+axum = "0.7.3"
+shuttle-axum = "0.36.0"
+shuttle-runtime = "0.36.0"
+shuttle-shared-db = { version = "0.36.0", features = ["postgres"] }
+sqlx = { version = "0.7.1", features = [
+    "runtime-tokio-native-tls",
+    "postgres",
+] }
+tokio = "1.28.2"
+tracing = "0.1.40"

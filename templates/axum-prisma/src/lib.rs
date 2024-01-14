@@ -1,0 +1,71 @@
+use std::{ops::Deref, sync::Arc};
+
+use anyhow::Result;
+use axum::{
+    extract::FromRequestParts, response::IntoResponse, routing::get, serve, Extension, Router,
+};
+use tokio::net::TcpListener;
+use tower_http::trace::{self, TraceLayer};
+use tracing::Level;
+
+#[allow(unused, warnings)]
+pub mod prisma;
+
+mod todo;
+
+pub async fn init() -> prisma::PrismaClient {
+    prisma::PrismaClient::_builder()
+        .build()
+        .await
+        .expect("failed to build prisma client")
+}
+
+#[derive(Debug, Clone)]
+struct Prisma(Arc<prisma::PrismaClient>);
+
+impl Deref for Prisma {
+    type Target = prisma::PrismaClient;
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+#[axum::async_trait]
+impl<S> FromRequestParts<S> for Prisma {
+    type Rejection = std::convert::Infallible;
+    async fn from_request_parts(
+        parts: &mut axum::http::request::Parts,
+        _state: &S,
+    ) -> Result<Self, Self::Rejection> {
+        let client = parts.extensions.get::<Self>().unwrap();
+        Ok(client.clone())
+    }
+}
+
+pub async fn start() -> Result<()> {
+    // 初始化日志
+    tracing_subscriber::fmt()
+        .with_target(false)
+        .compact()
+        .init();
+    let client = init().await;
+    let app = Router::new()
+        .route("/", get(hello_world))
+        .merge(todo::todo_router())
+        .layer(Extension(Prisma(Arc::new(client))))
+        .layer(
+            TraceLayer::new_for_http()
+                .make_span_with(trace::DefaultMakeSpan::new().level(Level::INFO))
+                .on_response(trace::DefaultOnResponse::new().level(Level::INFO))
+                .on_failure(trace::DefaultOnFailure::new().level(Level::ERROR)),
+        );
+
+    let tcp_listener = TcpListener::bind("127.0.0.1:3000").await?;
+    tracing::info!("listening on http://{}", tcp_listener.local_addr()?);
+    serve(tcp_listener, app).await?;
+    Ok(())
+}
+
+async fn hello_world() -> impl IntoResponse {
+    "Hello, World!".to_string()
+}
