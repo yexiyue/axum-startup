@@ -1,8 +1,6 @@
 use std::str::FromStr;
 
 use dialogue_macro::Asker;
-use handlebars::DirectorySourceOptions;
-use serde_json::json;
 
 #[derive(Debug, Asker)]
 pub struct NewProject {
@@ -50,22 +48,4 @@ pub fn create_new_project() {
     let res = res.orm(&options).finish();
     tracing::debug!("create new project {res:?}");
 
-    let mut handlebars = handlebars::Handlebars::new();
-    handlebars
-        .register_templates_directory(
-            "templates/axum-mongodb",
-            DirectorySourceOptions {
-                tpl_extension: ".rs".to_string(),
-                hidden: false,
-                temporary: false,
-            },
-        )
-        .unwrap();
-    let tpls=handlebars.get_templates();
-    let tpls=tpls.keys().collect::<Vec<_>>();
-    tracing::debug!("templates:{tpls:?}");
-    let res = handlebars
-        .render("axum-mongodb", &json!({}))
-        .unwrap();
-    tracing::info!("render result:{}", res);
 }

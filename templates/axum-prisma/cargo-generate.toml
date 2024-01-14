@@ -1,0 +1,8 @@
+[template]
+cargo_generate_version = ">=0.10.0"
+ignore = ["target", "Cargo.lock"]
+
+[placeholders.logs]
+type="bool"
+prompt = "Want to enable logs?"
+default = true
