@@ -23,5 +23,5 @@ members = []
 exclude = [
     "templates/axum-prisma",
     "templates/axum-shuttle",
-    "templates/axum-mongodb",
+    "templates/shuttle-mongodb",
 ]

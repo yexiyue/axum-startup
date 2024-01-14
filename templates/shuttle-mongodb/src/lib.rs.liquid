@@ -1,33 +1,19 @@
-use anyhow::Result;
 use axum::{response::IntoResponse, routing::get, Extension, Router};
 use axum_mongodb::preload::*;
-use mongodb::{options::ClientOptions, Client};
-use tokio::net::TcpListener;
+use mongodb::Database;
 {%- if logs %}
 use tower_http::trace::{self, TraceLayer};
 use tracing::Level;
 {%- endif %}
 mod todos;
-use todos::Todo;
 use crate::todos::todos_router;
+use todos::Todo;
 
 #[axum_mongodb::main]
-pub async fn start() -> Result<()> {
-    {% if logs %}
-    tracing_subscriber::fmt()
-        .with_target(false)
-        .compact()
-        .init();
-    {% endif %}
-    // 连接数据库
-    let client_options =
-        ClientOptions::parse("mongodb://mongodb:password@localhost:21045/admin").await?;
-    let client = Client::with_options(client_options)?;
-    let db = client.database("todo");
-
+pub async fn start(db: Database) -> Router {
     let mongodb_server = MongoDbServer::<Servers>::new(db).await;
 
-    let app = Router::new()
+    Router::new()
         .route("/", get(hello_world))
         .merge(todos_router())
         {%- if logs %}
@@ -38,13 +24,7 @@ pub async fn start() -> Result<()> {
                 .on_failure(trace::DefaultOnFailure::new().level(Level::ERROR)),
         )
         {%- endif %}
-        .layer(Extension(mongodb_server));
-
-    let listener = TcpListener::bind("127.0.0.1:8080").await.unwrap();
-    tracing::info!("listening on http://{}", listener.local_addr().unwrap());
-    axum::serve(listener, app).await.unwrap();
-
-    Ok(())
+        .layer(Extension(mongodb_server))
 }
 
 async fn hello_world() -> impl IntoResponse {
