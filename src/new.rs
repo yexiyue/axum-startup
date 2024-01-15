@@ -10,7 +10,10 @@ struct NewProject {
     use_shuttle: bool,
     #[select(prompt = "which orm do you want to use?", default = 0)]
     orm: Orm,
-    #[confirm(prompt = "do you want to use logs?", default = true)]
+    #[confirm(
+        prompt = "do you want to use logs (tracing,trancing-subscriber)?",
+        default = true
+    )]
     logs: bool,
 }
 

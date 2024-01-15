@@ -5,7 +5,7 @@ edition = "2021"
 author = "yexiyue"
 description = "A simple startup framework for axum"
 repository = "https://github.com/yexiyue/axum-startup"
-
+license = "MIT"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
